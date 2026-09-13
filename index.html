@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <meta
+        name="description"
+        content="AstraWave — A personal synthwave music player built by Astra."
+    >
+
+    <meta name="theme-color" content="#8f7cff">
+
+    <title>AstraWave — Music Reimagined</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+        rel="stylesheet"
+    >
+
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+    <!-- =====================================================
+         BACKGROUND
+         ===================================================== -->
+
+    <div class="background-grid" aria-hidden="true"></div>
+
+    <div
+        class="background-glow background-glow-one"
+        aria-hidden="true"
+    ></div>
+
+    <div
+        class="background-glow background-glow-two"
+        aria-hidden="true"
+    ></div>
+
+
+    <!-- =====================================================
+         HEADER
+         ===================================================== -->
+
+    <header class="site-header">
+
+        <a
+            href="#player"
+            class="logo"
+            aria-label="AstraWave home"
+        >
+            <span class="logo-icon">◈</span>
+            <span class="logo-text">AstraWave</span>
+        </a>
+
+        <nav
+            class="main-nav"
+            aria-label="Main navigation"
+        >
+            <a href="#player">Player</a>
+            <a href="#playlist">Playlist</a>
+            <a href="#about">About</a>
+        </nav>
+
+    </header>
+
+
+    <!-- =====================================================
+         MAIN CONTENT
+         ===================================================== -->
+
+    <main>
+
+
+        <!-- =================================================
+             HERO
+             ================================================= -->
+
+        <section
+            id="player"
+            class="hero-section"
+            aria-labelledby="hero-title"
+        >
+
+            <div class="hero-content">
+
+                <p class="eyebrow">
+                    ASTRAWAVE V0.1
+                </p>
+
+                <h1 id="hero-title">
+                    Music.<br>
+                    <span>Reimagined.</span>
+                </h1>
+
+                <p class="hero-description">
+                    Your music. Your atmosphere. Your wave.
+                    A personal synthwave-inspired music player
+                    built by Astra.
+                </p>
+
+            </div>
+
+        </section>
+
+
+        <!-- =================================================
+             PLAYER
+             ================================================= -->
+
+        <section
+            class="player-section"
+            aria-label="Music player"
+        >
+
+            <div class="player-card">
+
+
+                <!-- =========================================
+                     ALBUM ART
+                     ========================================= -->
+
+                <div
+                    class="album-art"
+                    aria-label="AstraWave album artwork"
+                >
+
+                    <div
+                        class="album-art-glow"
+                        aria-hidden="true"
+                    ></div>
+
+                    <div
+                        class="album-art-content"
+                        aria-hidden="true"
+                    >
+
+                        <span class="album-art-symbol">
+                            ◈
+                        </span>
+
+                        <span class="album-art-title">
+                            ASTRAWAVE
+                        </span>
+
+                    </div>
+
+                </div>
+
+
+                <!-- =========================================
+                     PLAYER INFORMATION
+                     ========================================= -->
+
+                <div class="player-info">
+
+
+                    <!-- TRACK DETAILS -->
+
+                    <div class="track-details">
+
+                        <p class="track-label">
+                            NOW PLAYING
+                        </p>
+
+                        <h2 id="track-title">
+                            No Track Loaded
+                        </h2>
+
+                        <p id="track-artist">
+                            AstraWave
+                        </p>
+
+                    </div>
+
+
+                    <!-- PROGRESS -->
+
+                    <div class="progress-container">
+
+                        <div
+                            class="progress-bar"
+                            role="slider"
+                            aria-label="Track progress"
+                            aria-valuemin="0"
+                            aria-valuemax="100"
+                            aria-valuenow="0"
+                        >
+                            <div
+                                id="progress"
+                                class="progress"
+                            ></div>
+                        </div>
+
+                        <div class="time-display">
+
+                            <span id="current-time">
+                                0:00
+                            </span>
+
+                            <span id="duration">
+                                0:00
+                            </span>
+
+                        </div>
+
+                    </div>
+
+
+                    <!-- MAIN CONTROLS -->
+
+                    <div
+                        class="player-controls"
+                        aria-label="Playback controls"
+                    >
+
+                        <button
+                            id="previous-button"
+                            class="control-button secondary"
+                            type="button"
+                            aria-label="Previous track"
+                            title="Previous track"
+                        >
+                            ◀
+                        </button>
+
+
+                        <button
+                            id="play-button"
+                            class="control-button play-button"
+                            type="button"
+                            aria-label="Play"
+                            title="Play"
+                        >
+                            ▶
+                        </button>
+
+
+                        <button
+                            id="next-button"
+                            class="control-button secondary"
+                            type="button"
+                            aria-label="Next track"
+                            title="Next track"
+                        >
+                            ▶
+                        </button>
+
+                    </div>
+
+
+                    <!-- VOLUME -->
+
+                    <div class="volume-container">
+
+                        <span
+                            class="volume-icon"
+                            aria-hidden="true"
+                        >
+                            🔊
+                        </span>
+
+                        <input
+                            id="volume"
+                            type="range"
+                            min="0"
+                            max="1"
+                            step="0.01"
+                            value="1"
+                            aria-label="Volume"
+                        >
+
+                    </div>
+
+
+                    <!-- VISUALIZER -->
+
+                    <canvas
+                        id="visualizer"
+                        class="astrawave-visualizer"
+                        aria-hidden="true"
+                    ></canvas>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- =================================================
+             PLAYLIST
+             ================================================= -->
+
+        <section
+            id="playlist"
+            class="playlist-section"
+            aria-labelledby="playlist-title"
+        >
+
+            <div class="section-heading">
+
+                <div>
+
+                    <p class="section-label">
+                        YOUR MUSIC
+                    </p>
+
+                    <h2 id="playlist-title">
+                        Playlist
+                    </h2>
+
+                </div>
+
+                <span
+                    id="track-count"
+                    class="track-count"
+                >
+                    0 tracks
+                </span>
+
+            </div>
+
+
+            <!-- SEARCH -->
+
+            <input
+                id="playlist-search"
+                class="astrawave-search"
+                type="search"
+                placeholder="Search your music..."
+                aria-label="Search playlist"
+                autocomplete="off"
+            >
+
+
+            <!-- PLAYLIST TRACKS -->
+
+            <div
+                id="playlist-container"
+                class="playlist-container"
+            >
+
+                <div class="empty-playlist">
+
+                    <div
+                        class="empty-playlist-icon"
+                        aria-hidden="true"
+                    >
+                        🎵
+                    </div>
+
+                    <h3>
+                        No music yet
+                    </h3>
+
+                    <p>
+                        Add your music files to the
+                        AstraWave music folder and
+                        they'll appear here.
+                    </p>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- =================================================
+             ABOUT
+             ================================================= -->
+
+        <section
+            id="about"
+            class="about-section"
+            aria-labelledby="about-title"
+        >
+
+            <div class="section-heading">
+
+                <div>
+
+                    <p class="section-label">
+                        THE PROJECT
+                    </p>
+
+                    <h2 id="about-title">
+                        About AstraWave
+                    </h2>
+
+                </div>
+
+            </div>
+
+
+            <div class="about-card">
+
+                <div
+                    class="about-icon"
+                    aria-hidden="true"
+                >
+                    🌌
+                </div>
+
+                <div>
+
+                    <h3>
+                        A personal music experience.
+                    </h3>
+
+                    <p>
+                        AstraWave is a personal music player
+                        built from scratch with HTML, CSS and
+                        JavaScript. The goal is simple:
+                        make listening to music feel fucking cool.
+                    </p>
+
+                </div>
+
+            </div>
+
+        </section>
+
+    </main>
+
+
+    <!-- =====================================================
+         FOOTER
+         ===================================================== -->
+
+    <footer class="site-footer">
+
+        <div class="footer-logo">
+            ◈ AstraWave
+        </div>
+
+        <p>
+            Built by Astra · AstraShub Projects
+        </p>
+
+        <p class="footer-version">
+            AstraWave v0.1
+        </p>
+
+    </footer>
+
+
+    <!-- =====================================================
+         AUDIO ENGINE
+         ===================================================== -->
+
+    <audio
+        id="audio-player"
+        preload="metadata"
+    ></audio>
+
+
+    <!-- =====================================================
+         JAVASCRIPT
+         ===================================================== -->
+
+    <script src="script.js"></script>
+
+</body>
+</html>
