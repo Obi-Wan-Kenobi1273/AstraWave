@@ -156,6 +156,21 @@ const tracks = [
         title: "NEON HEARTBREAK",
         artist: "Astra",
         file: "music/NEON HEARTBREAK.mp3"
+    },
+    {
+        title: "TEAR IT DOWN",
+        artist: "Astra",
+        file: "music/TEAR IT DOWN.mp3"
+    },
+    {
+        title: "Single, Looking for Love",
+        artist: "Astra",
+        file: "music/Single, Looking for Love.mp3"
+    },
+    {
+        title: "Drunk and Alone",
+        artist: "Astra",
+        file: "music/Drunk and Alone.mp3"
     }
 ];
 
