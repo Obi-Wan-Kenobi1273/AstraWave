@@ -209,7 +209,15 @@ let visualizerCanvas = null;
 let audioContext = null;
 let analyser = null;
 let sourceNode = null;
+
 let visualizerAnimation = null;
+let visualizerAnimationType = null;
+let visualizerDataArray = null;
+let visualizerContext = null;
+let visualizerGradient = null;
+let visualizerGradientKey = "";
+let visualizerLastFrameTime = 0;
+let visualizerDrawCount = 0;
 
 let albumArt = null;
 let albumArtSymbol = null;
@@ -217,6 +225,16 @@ let albumArtLines = null;
 let albumArtPulse = 0;
 
 let currentArtwork = null;
+
+const isMobileDevice =
+    window.matchMedia &&
+    (
+        window.matchMedia("(max-width: 700px)").matches ||
+        (
+            window.matchMedia("(pointer: coarse)").matches &&
+            window.innerWidth <= 900
+        )
+    );
 
 
 /* =========================
@@ -466,6 +484,9 @@ function updateAlbumArtwork(track) {
         pattern
     };
 
+    visualizerGradient = null;
+    visualizerGradientKey = "";
+
     albumArt.style.setProperty(
         "--art-primary",
         palette.primary
@@ -499,6 +520,11 @@ function updateAlbumArtwork(track) {
     albumArt.style.setProperty(
         "--art-glow-y",
         `${glowY}%`
+    );
+
+    albumArt.style.setProperty(
+        "--art-energy",
+        "0"
     );
 
     albumArt.style.background =
@@ -576,6 +602,7 @@ function injectArtworkStyles() {
                 background 0.8s ease,
                 box-shadow 0.8s ease,
                 transform 0.4s ease;
+            will-change: transform;
         }
 
         .astrawave-artwork::before {
@@ -659,6 +686,7 @@ function injectArtworkStyles() {
                 0 0 28px var(--art-accent);
             z-index: 4;
             animation: astrwave-symbol-float 4s ease-in-out infinite;
+            will-change: transform, filter;
         }
 
         .astrawave-artwork.is-playing
@@ -738,6 +766,32 @@ function injectArtworkStyles() {
         .astrawave-art-lines span {
             height: 2px;
             filter: blur(0.4px);
+        }
+
+        @media (max-width: 700px) {
+            .astrawave-artwork::before {
+                filter: blur(16px);
+                opacity: 0.42;
+                animation-duration: 10s;
+            }
+
+            .astrawave-art-symbol {
+                backdrop-filter: none;
+                box-shadow:
+                    0 0 0 6px rgba(255,255,255,0.035),
+                    0 0 22px var(--art-primary),
+                    inset 0 0 18px rgba(255,255,255,0.08);
+            }
+
+            .astrawave-art-lines span {
+                box-shadow: none;
+            }
+
+            .astrawave-artwork:not(.is-playing)::before,
+            .astrawave-artwork:not(.is-playing)
+            .astrawave-art-symbol {
+                animation-play-state: paused;
+            }
         }
 
         @keyframes astrwave-art-glow {
@@ -860,6 +914,8 @@ function loadTrack(index, autoplay = false) {
         index = 0;
     }
 
+    stopVisualizer();
+
     currentTrackIndex = index;
 
     const track =
@@ -940,6 +996,8 @@ function playTrack() {
             .then(() => {
                 isPlaying = true;
 
+                startVisualizer();
+
                 if (albumArt) {
                     albumArt.classList.add(
                         "is-playing"
@@ -955,6 +1013,8 @@ function playTrack() {
             })
             .catch(error => {
                 isPlaying = false;
+
+                stopVisualizer();
 
                 if (albumArt) {
                     albumArt.classList.remove(
@@ -980,6 +1040,8 @@ function pauseTrack() {
     audioPlayer.pause();
 
     isPlaying = false;
+
+    stopVisualizer();
 
     if (albumArt) {
         albumArt.classList.remove(
@@ -1260,6 +1322,8 @@ audioPlayer.addEventListener(
     () => {
         isPlaying = true;
 
+        startVisualizer();
+
         if (albumArt) {
             albumArt.classList.add(
                 "is-playing"
@@ -1276,6 +1340,8 @@ audioPlayer.addEventListener(
     () => {
         isPlaying = false;
 
+        stopVisualizer();
+
         if (albumArt) {
             albumArt.classList.remove(
                 "is-playing"
@@ -1290,6 +1356,8 @@ audioPlayer.addEventListener(
 audioPlayer.addEventListener(
     "ended",
     () => {
+        stopVisualizer();
+
         if (repeatMode === "one") {
             audioPlayer.currentTime = 0;
             playTrack();
@@ -2085,11 +2153,19 @@ function createVisualizer() {
         );
     }
 
+    visualizerContext =
+        visualizerCanvas.getContext(
+            "2d"
+        );
+
     resizeVisualizer();
 
     window.addEventListener(
         "resize",
-        resizeVisualizer
+        resizeVisualizer,
+        {
+            passive: true
+        }
     );
 }
 
@@ -2101,16 +2177,62 @@ function resizeVisualizer() {
     const rect =
         visualizerCanvas.getBoundingClientRect();
 
-    const pixelRatio =
+    if (
+        rect.width <= 0 ||
+        rect.height <= 0
+    ) {
+        return;
+    }
+
+    const rawPixelRatio =
         window.devicePixelRatio || 1;
 
+    const pixelRatio =
+        isMobileDevice
+            ? Math.min(
+                rawPixelRatio,
+                1.25
+            )
+            : Math.min(
+                rawPixelRatio,
+                2
+            );
+
+    const newWidth =
+        Math.max(
+            1,
+            Math.floor(
+                rect.width *
+                pixelRatio
+            )
+        );
+
+    const newHeight =
+        Math.max(
+            1,
+            Math.floor(
+                rect.height *
+                pixelRatio
+            )
+        );
+
+    if (
+        visualizerCanvas.width ===
+            newWidth &&
+        visualizerCanvas.height ===
+            newHeight
+    ) {
+        return;
+    }
+
     visualizerCanvas.width =
-        rect.width *
-        pixelRatio;
+        newWidth;
 
     visualizerCanvas.height =
-        rect.height *
-        pixelRatio;
+        newHeight;
+
+    visualizerGradient = null;
+    visualizerGradientKey = "";
 }
 
 function setupVisualizerAudio() {
@@ -2133,10 +2255,15 @@ function setupVisualizerAudio() {
         analyser =
             audioContext.createAnalyser();
 
-        analyser.fftSize = 128;
+        analyser.fftSize =
+            isMobileDevice
+                ? 64
+                : 128;
 
         analyser.smoothingTimeConstant =
-            0.82;
+            isMobileDevice
+                ? 0.88
+                : 0.82;
 
         sourceNode =
             audioContext.createMediaElementSource(
@@ -2150,6 +2277,11 @@ function setupVisualizerAudio() {
         analyser.connect(
             audioContext.destination
         );
+
+        visualizerDataArray =
+            new Uint8Array(
+                analyser.frequencyBinCount
+            );
     }
 
     if (
@@ -2158,102 +2290,190 @@ function setupVisualizerAudio() {
     ) {
         audioContext.resume();
     }
-
-    if (!visualizerAnimation) {
-        animateVisualizer();
-    }
 }
 
-function animateVisualizer() {
+function startVisualizer() {
     if (
         !visualizerCanvas ||
         !analyser
     ) {
-        visualizerAnimation = null;
         return;
     }
+
+    if (visualizerAnimation) {
+        return;
+    }
+
+    visualizerLastFrameTime = 0;
+    visualizerDrawCount = 0;
+
+    if (isMobileDevice) {
+        visualizerAnimationType =
+            "timeout";
+
+        drawVisualizer();
+    } else {
+        visualizerAnimationType =
+            "raf";
+
+        visualizerAnimation =
+            requestAnimationFrame(
+                drawVisualizer
+            );
+    }
+}
+
+function stopVisualizer() {
+    if (!visualizerAnimation) {
+        return;
+    }
+
+    if (
+        visualizerAnimationType ===
+        "raf"
+    ) {
+        cancelAnimationFrame(
+            visualizerAnimation
+        );
+    } else {
+        clearTimeout(
+            visualizerAnimation
+        );
+    }
+
+    visualizerAnimation = null;
+    visualizerAnimationType = null;
+    visualizerLastFrameTime = 0;
+}
+
+function drawVisualizer(timestamp = 0) {
+    if (
+        !visualizerCanvas ||
+        !analyser ||
+        !isPlaying
+    ) {
+        visualizerAnimation = null;
+        visualizerAnimationType = null;
+        return;
+    }
+
+    if (
+        isMobileDevice &&
+        visualizerLastFrameTime &&
+        timestamp -
+            visualizerLastFrameTime <
+            32
+    ) {
+        visualizerAnimation =
+            requestAnimationFrame(
+                drawVisualizer
+            );
+
+        visualizerAnimationType =
+            "raf";
+
+        return;
+    }
+
+    visualizerLastFrameTime =
+        timestamp ||
+        performance.now();
 
     const canvas =
         visualizerCanvas;
 
     const context =
-        canvas.getContext(
-            "2d"
-        );
+        visualizerContext ||
+        canvas.getContext("2d");
 
     if (!context) {
         visualizerAnimation = null;
+        visualizerAnimationType = null;
         return;
     }
 
+    if (!visualizerDataArray) {
+        visualizerDataArray =
+            new Uint8Array(
+                analyser.frequencyBinCount
+            );
+    }
+
+    analyser.getByteFrequencyData(
+        visualizerDataArray
+    );
+
+    context.clearRect(
+        0,
+        0,
+        canvas.width,
+        canvas.height
+    );
+
     const bufferLength =
-        analyser.frequencyBinCount;
+        visualizerDataArray.length;
 
-    const dataArray =
-        new Uint8Array(
-            bufferLength
+    let average = 0;
+
+    for (
+        let i = 0;
+        i < bufferLength;
+        i++
+    ) {
+        average +=
+            visualizerDataArray[i];
+    }
+
+    average /=
+        bufferLength;
+
+    const energy =
+        average / 255;
+
+    albumArtPulse =
+        albumArtPulse * 0.88 +
+        energy * 0.12;
+
+    visualizerDrawCount++;
+
+    if (
+        albumArt &&
+        currentArtwork &&
+        (
+            !isMobileDevice ||
+            visualizerDrawCount % 2 === 0
+        )
+    ) {
+        const glow =
+            1 +
+            albumArtPulse * 0.08;
+
+        albumArt.style.setProperty(
+            "--art-energy",
+            albumArtPulse
         );
 
-    function draw() {
-        visualizerAnimation =
-            requestAnimationFrame(
-                draw
-            );
+        albumArt.style.transform =
+            `scale(${glow})`;
+    }
 
-        analyser.getByteFrequencyData(
-            dataArray
-        );
+    const barWidth =
+        canvas.width /
+        bufferLength;
 
-        context.clearRect(
-            0,
-            0,
-            canvas.width,
-            canvas.height
-        );
+    const palette =
+        currentArtwork?.palette ||
+        artworkPalettes[0];
 
-        let average = 0;
+    const gradientKey =
+        `${canvas.width}x${canvas.height}-${palette.primary}-${palette.secondary}-${palette.accent}`;
 
-        for (
-            let i = 0;
-            i < bufferLength;
-            i++
-        ) {
-            average +=
-                dataArray[i];
-        }
-
-        average /=
-            bufferLength;
-
-        const energy =
-            average / 255;
-
-        albumArtPulse =
-            albumArtPulse * 0.88 +
-            energy * 0.12;
-
-        if (
-            albumArt &&
-            currentArtwork
-        ) {
-            const glow =
-                1 +
-                albumArtPulse * 0.08;
-
-            albumArt.style.setProperty(
-                "--art-energy",
-                albumArtPulse
-            );
-
-            albumArt.style.transform =
-                `scale(${glow})`;
-        }
-
-        const barWidth =
-            canvas.width /
-            bufferLength;
-
-        const gradient =
+    if (
+        !visualizerGradient ||
+        visualizerGradientKey !==
+            gradientKey
+    ) {
+        visualizerGradient =
             context.createLinearGradient(
                 0,
                 canvas.height,
@@ -2261,11 +2481,7 @@ function animateVisualizer() {
                 0
             );
 
-        const palette =
-            currentArtwork?.palette ||
-            artworkPalettes[0];
-
-        gradient.addColorStop(
+        visualizerGradient.addColorStop(
             0,
             hexToRgba(
                 palette.primary,
@@ -2273,7 +2489,7 @@ function animateVisualizer() {
             )
         );
 
-        gradient.addColorStop(
+        visualizerGradient.addColorStop(
             0.5,
             hexToRgba(
                 palette.secondary,
@@ -2281,7 +2497,7 @@ function animateVisualizer() {
             )
         );
 
-        gradient.addColorStop(
+        visualizerGradient.addColorStop(
             1,
             hexToRgba(
                 palette.accent,
@@ -2289,41 +2505,69 @@ function animateVisualizer() {
             )
         );
 
-        context.fillStyle =
-            gradient;
-
-        for (
-            let i = 0;
-            i < bufferLength;
-            i++
-        ) {
-            const value =
-                dataArray[i] / 255;
-
-            const barHeight =
-                value *
-                canvas.height;
-
-            const x =
-                i * barWidth;
-
-            const y =
-                canvas.height -
-                barHeight;
-
-            context.fillRect(
-                x,
-                y,
-                Math.max(
-                    barWidth - 2,
-                    1
-                ),
-                barHeight
-            );
-        }
+        visualizerGradientKey =
+            gradientKey;
     }
 
-    draw();
+    context.fillStyle =
+        visualizerGradient;
+
+    for (
+        let i = 0;
+        i < bufferLength;
+        i++
+    ) {
+        const value =
+            visualizerDataArray[i] / 255;
+
+        const barHeight =
+            value *
+            canvas.height;
+
+        const x =
+            i * barWidth;
+
+        const y =
+            canvas.height -
+            barHeight;
+
+        context.fillRect(
+            x,
+            y,
+            Math.max(
+                barWidth - 2,
+                1
+            ),
+            barHeight
+        );
+    }
+
+    if (isMobileDevice) {
+        visualizerAnimation =
+            setTimeout(
+                () => {
+                    visualizerAnimation = null;
+
+                    if (isPlaying) {
+                        drawVisualizer(
+                            performance.now()
+                        );
+                    }
+                },
+                32
+            );
+
+        visualizerAnimationType =
+            "timeout";
+    } else {
+        visualizerAnimation =
+            requestAnimationFrame(
+                drawVisualizer
+            );
+
+        visualizerAnimationType =
+            "raf";
+    }
 }
 
 function hexToRgba(
